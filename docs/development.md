@@ -34,11 +34,12 @@ of VS Code's own `package.json` file for their [`electron`][] dependency. The
 major version of [Electron][] will tell us which [Node.js][] is included, which
 dictates which version of Node.js the extension is eventually run with. This
 lets us finally update our `@types/node` development dependency to match, our
-developer machines if necessary, and the CI and OneBranch pipeline tasks.
+developer machines if necessary, the CI and OneBranch pipeline tasks, and the
+`.tsconfig` file. Note that the version of `@types/node` will not necessarily
+exactly match the version of Node.js, but the major version should.
 
-[`vscodeVersion`]: https://github.com/microsoft/azuredatastudio/blob/4970733324ef8254b7c22a5dc55af7f8a1dea93f/product.json#L50
-[`electron`]: https://github.com/microsoft/vscode/blob/384ff7382de624fb94dbaf6da11977bba1ecd427/package.json#L159
-[Electron]: https://www.electronjs.org/blog/electron-30-0
+[`electron`]: https://github.com/microsoft/vscode/blob/138f619c86f1199955d53b4166bef66ef252935c/package.json#L156
+[Electron]: https://releases.electronjs.org/release/v32.2.6
 [Node.js]: https://nodejs.org/en/download/package-manager
 
 ### Building the Code
@@ -65,7 +66,7 @@ To debug the extension use one of the provided `Launch Extension` debug configur
 
 All three templates use pre-launch tasks to build the code, and support automatic restart of the extension host on changes to the Extension source code. [Hot Reload](https://devblogs.microsoft.com/dotnet/introducing-net-hot-reload/) is also enabled for PowerShell Editor Services.
 
-> [!WARNING]  
+> [!WARNING]
 > There is a current limitation that, if you restart the extension/extension host or it is restarted due to a extension code change, the editor services attachment will be disconnected due to the PSES terminal being terminated, and you will either need to restart the debug session completely, or do a manual build of PSES and run the `Attach to Editor Services` debug launch manually.
 
 Try the `powershell.developer.editorServicesWaitForDebugger` setting to ensure that you are fully attached before the extension startup process continues.
@@ -86,29 +87,34 @@ of Microsoft. Assume `origin` is GitHub and `ado` is Azure DevOps.
 cd ./PowerShellEditorServices
 git checkout -B release
 ./tools/updateVersion.ps1 -Version "4.0.0" -Changes "Major release!"
+# Amend changelog as necessary
 git push --force-with-lease origin
-git push ado HEAD:main
-
+# Open, approve, and merge PR on GitHub
 cd ../vscode-powershell
 git checkout -B release
 ./tools/updateVersion.ps1 -Version "2024.4.0" -Changes "Major release!"
+# Amend changelog as necessary
 git push --force-with-lease origin
-git push ado HEAD:main
+# Open, approve, and merge PR on GitHub
+cd ../PowerShellEditorServices
+git checkout main
+git pull
+git push ado HEAD:release
+cd ../vscode-powershell
+git checkout main
+git pull
+git push ado HEAD:release
+# Download and test assets from draft GitHub Releases
+# Publish releases, ensuring tag is at release commit in `main`
+# Permit pipeline to publish to marketplace
 ```
-
-1. Amend changelogs as necessary.
-2. Push `release` branches to GitHub and to Azure DevOps `main` branch.
-3. Download and test assets!
-4. Publish draft releases and merge (don't squash!) branches.
-5. Permit pipeline to publish to marketplace.
 
 If rolling from pre-release to release, do not change the version of PowerShell
 Editor Services between a pre-release and the subsequent release! We only
 need to release the extension.
 
-The Azure DevOps pipelines have to build off `main` branch for _reasons_,
-but we still want to use PRs. Hence pushing `release` to `main` and then
-merging (not squashing nor rebasing) those PRs so the commit stays the same.
+The Azure DevOps pipelines have to build off a PR merged to `main` for _reasons_,
+hence that repo is a superset including all our commits plus signed PR merge commits.
 
 ### Versioning
 
