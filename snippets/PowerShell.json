@@ -306,7 +306,7 @@
       "\t\t$${28:Param3},",
       "",
       "\t\t# ${33:Param4} help description",
-      "\t\t# Checkout the docs https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_argument_completion?view=powershell-7.5#argumentcompletions-attribute on different ways to provide Argument Completion",
+      "\t\t# Checkout the docs https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_functions_argument_completion#argumentcompleter-attribute on different ways to provide Argument Completion",
       "\t\t[Parameter(ParameterSetName = '${34:Yet Another Parameter Set}')]",
       "\t\t[ArgumentCompleter({'${35:add completer script}'})]",
       "\t\t[ValidateLength(0, 15)]",
@@ -345,7 +345,7 @@
   },
   "Function: Suppress PSScriptAnalyzer Rule": {
     "prefix": ["suppress-message-rule-function", "[SuppressMessageAttribute]"],
-    "description": "Suppress a PSScriptAnalyzer rule for a function. More: https://docs.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules#suppressing-rules",
+    "description": "Suppress a PSScriptAnalyzer rule for a function. More: https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/using-scriptanalyzer?view=ps-modules#suppressing-rules",
     "body": [
       "[Diagnostics.CodeAnalysis.SuppressMessageAttribute(",
       "\t<#Category#>'${1:PSProvideDefaultParameterValue}', <#CheckId#>\\$null,",
@@ -406,7 +406,7 @@
   },
   "IfShouldProcess": {
     "prefix": "if-should-process",
-    "description": "Defines a condition that only executes if -WhatIf is not set, and returns a message otherwise. More: https://docs.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-shouldprocess",
+    "description": "Defines a condition that only executes if -WhatIf is not set, and returns a message otherwise. More: https://learn.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-shouldprocess",
     "body": [
       "if (\\$PSCmdlet.ShouldProcess(\"${1:Target}\", \"${2:Operation}\")) {",
       "\t${0:$TM_SELECTED_TEXT}",
@@ -415,7 +415,7 @@
   },
   "ModuleManifest": {
     "prefix": "manifest",
-    "description": "Basic skeleton for a PowerShell module manifest, complete with PowerShell Gallery metadata. More: https://docs.microsoft.com/en-us/powershell/scripting/developer/module/how-to-write-a-powershell-module-manifest",
+    "description": "Basic skeleton for a PowerShell module manifest, complete with PowerShell Gallery metadata. More: https://learn.microsoft.com/en-us/powershell/scripting/developer/module/how-to-write-a-powershell-module-manifest",
     "body": [
       "@{",
       "\t# If authoring a script module, the RootModule is the name of your .psm1 file",
@@ -576,7 +576,7 @@
   },
   "Parameter: Suppress PSScriptAnalyzer Rule": {
     "prefix": ["suppress-message-rule-parameter", "[SuppressMessageAttribute]"],
-    "description": "Suppress a PSScriptAnalyzer rule on a parameter. More: https://docs.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules#suppressing-rules",
+    "description": "Suppress a PSScriptAnalyzer rule on a parameter. More: https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/using-scriptanalyzer?view=ps-modules#suppressing-rules",
     "body": [
       "[Diagnostics.CodeAnalysis.SuppressMessageAttribute(",
       "\t<#Category#>'${1:PSUseDeclaredVarsMoreThanAssignments}',",
@@ -587,7 +587,7 @@
   },
   "Pipeline Function": {
     "prefix": "function-pipeline",
-    "description": "Basic function that accepts pipeline input. More: https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pipelines",
+    "description": "Basic function that accepts pipeline input. More: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pipelines",
     "body": [
       "function $1 {",
       "  [CmdletBinding()]",
@@ -613,7 +613,7 @@
   },
   "Scope: Suppress PSScriptAnalyzer Rule": {
     "prefix": ["suppress-message-rule-scope", "[SuppressMessageAttribute]"],
-    "description": "Suppress a PSScriptAnalyzer rule based on a function/parameter/class/variable/object's name by setting the SuppressMessageAttribute's Target property to a regular expression or a glob pattern. More: https://docs.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules#suppressing-rules",
+    "description": "Suppress a PSScriptAnalyzer rule based on a function/parameter/class/variable/object's name by setting the SuppressMessageAttribute's Target property to a regular expression or a glob pattern. More: https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/using-scriptanalyzer?view=ps-modules#suppressing-rules",
     "body": [
       "[Diagnostics.CodeAnalysis.SuppressMessageAttribute(",
       "\t<#Category#>'${1:PSUseDeclaredVarsMoreThanAssignments}', <#CheckId#>\\$null,",
@@ -635,7 +635,7 @@
   },
   "Suppress PSScriptAnalyzer Rule": {
     "prefix": ["suppress-message-rule", "[SuppressMessageAttribute]"],
-    "description": "Suppress a PSScriptAnalyzer rule. More: https://docs.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/overview?view=ps-modules#suppressing-rules",
+    "description": "Suppress a PSScriptAnalyzer rule. More: https://learn.microsoft.com/en-us/powershell/utility-modules/psscriptanalyzer/using-scriptanalyzer?view=ps-modules#suppressing-rules",
     "body": [
       "[Diagnostics.CodeAnalysis.SuppressMessageAttribute(",
       "\t<#Category#>'${1:PSUseDeclaredVarsMoreThanAssignments}',<#CheckId#>\\$null,",
