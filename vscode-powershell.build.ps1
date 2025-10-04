@@ -33,39 +33,16 @@ task RestoreNodeOptional -If { !(Test-Path ./node_modules/eslint) } {
 }
 
 task RestoreEditorServices -If (Get-EditorServicesPath) {
-    switch ($Configuration) {
-        "Debug" {
-            # When debugging, we always rebuild PSES and ensure its symlinked so
-            # that developers always have the latest local bits.
-            if ((Get-Item ./modules -ErrorAction SilentlyContinue).LinkType -ne "SymbolicLink") {
-                Write-Build DarkMagenta "Creating symbolic link to PSES"
-                Remove-BuildItem ./modules
-                New-Item -ItemType SymbolicLink -Path ./modules -Target "$(Split-Path (Get-EditorServicesPath))/module"
-            }
-
-            Write-Build DarkGreen "Building PSES"
-            Invoke-Build Build (Get-EditorServicesPath) -Configuration $Configuration
-        }
-        "Release" {
-            # When releasing, we ensure the bits are not symlinked but copied,
-            # and only if they don't already exist.
-            if ((Get-Item ./modules -ErrorAction SilentlyContinue).LinkType -eq "SymbolicLink") {
-                Write-Build DarkRed "Deleting PSES symbolic link"
-                Remove-BuildItem ./modules
-            }
-
-            if (!(Test-Path ./modules)) {
-                # We only build if it hasn't been built at all.
-                if (!(Test-Path "$(Split-Path (Get-EditorServicesPath))/module/PowerShellEditorServices/bin")) {
-                    Write-Build DarkGreen "Building PSES"
-                    Invoke-Build Build (Get-EditorServicesPath) -Configuration $Configuration
-                }
-
-                Write-Build DarkGreen "Copying PSES"
-                Copy-Item -Recurse -Force "$(Split-Path (Get-EditorServicesPath))/module" ./modules
-            }
-        }
+    # With VSCE --follow-symlinks support, we can now use symlinks consistently
+    # for both Debug and Release configurations.
+    if ((Get-Item ./modules -ErrorAction SilentlyContinue).LinkType -ne "SymbolicLink") {
+        Write-Build DarkMagenta "Creating symbolic link to PSES"
+        Remove-BuildItem ./modules
+        New-Item -ItemType SymbolicLink -Path ./modules -Target "$(Split-Path (Get-EditorServicesPath))/module"
     }
+
+    Write-Build DarkGreen "Building PSES"
+    Invoke-Build Build (Get-EditorServicesPath) -Configuration $Configuration
 }
 
 #endregion
@@ -86,18 +63,14 @@ task CleanEditorServices -If (Get-EditorServicesPath) {
 task Lint RestoreNodeOptional, {
     Write-Build DarkMagenta "Linting TypeScript"
     Invoke-BuildExec { & npm run lint }
+    Write-Build DarkMagenta "Checking formatting of TypeScript, JSON, etc."
+    Invoke-BuildExec { & npm run format }
 }
 
 task Build RestoreEditorServices, RestoreNode, {
     Write-Build DarkGreen "Building vscode-powershell"
     Assert-Build (Test-Path ./modules/PowerShellEditorServices/bin) "Extension requires PSES"
 
-    # TODO: When supported we should use `esbuild` for the tests too. Although
-    # we now use `esbuild` to transpile, bundle, and minify the extension, we
-    # still use `tsc` to transpile everything in `src` and `test` because the VS
-    # Code test runner expects individual files (and globs them at runtime).
-    # Unfortunately `esbuild` doesn't support emitting 1:1 files (yet).
-    # https://github.com/evanw/esbuild/issues/944
     switch ($Configuration) {
         "Debug" { Invoke-BuildExec { & npm run compile } }
         "Release" { Invoke-BuildExec { & npm run compile -- --minify } }
@@ -111,7 +84,7 @@ task Test Lint, Build, {
     Write-Build DarkMagenta "Running extension tests"
     Invoke-BuildExec { & npm run test }
     # Reset the state of files modified by tests
-    Invoke-BuildExec { git checkout package.json test/TestEnvironment.code-workspace }
+    Invoke-BuildExec { git checkout test/TestEnvironment.code-workspace }
 }
 
 task TestEditorServices -If (Get-EditorServicesPath) {
@@ -129,15 +102,7 @@ task Package {
     New-Item -ItemType Directory -Force out | Out-Null
 
     Assert-Build (Test-Path ./dist/extension.js) "Extension must be built!"
-
-    # Packaging requires a copy of the modules folder, not a symbolic link. But
-    # we might have built in Debug configuration, not Release, and still want to
-    # package it. So delete the symlink and copy what we just built.
-    if ((Get-Item ./modules -ErrorAction SilentlyContinue).LinkType -eq "SymbolicLink") {
-        Write-Build DarkRed "PSES is a symbolic link, replacing with copy!"
-        Remove-BuildItem ./modules
-        Copy-Item -Recurse -Force "$(Split-Path (Get-EditorServicesPath))/module" ./modules
-    }
+    Assert-Build (Test-Path ./modules/PowerShellEditorServices/bin) "PowerShell Editor Services must be built under modules!"
 
     if ($version.Minor % 2 -ne 0) {
         Write-Build DarkRed "This is a pre-release!"
