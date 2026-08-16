@@ -7,7 +7,7 @@ import vscode = require("vscode");
 import { promisify } from "util";
 import type { ILogger } from "./logging";
 import type { IEditorServicesSessionDetails } from "./session";
-import { Settings, validateCwdSetting } from "./settings";
+import { validateCwdSetting } from "./settings";
 import utils = require("./utils");
 
 export class PowerShellProcess {
@@ -22,6 +22,10 @@ export class PowerShellProcess {
     private pid?: number;
     private pidUpdateEmitter?: vscode.EventEmitter<number | undefined>;
 
+    // Captured when the terminal closes so callers can report why the process
+    // exited (e.g. a non-zero exit code) instead of a generic failure message.
+    private exitStatus?: vscode.TerminalExitStatus;
+
     constructor(
         public exePath: string,
         private bundledModulesPath: string,
@@ -31,7 +35,6 @@ export class PowerShellProcess {
         private logDirectoryPath: vscode.Uri,
         private startPsesArgs: string,
         private sessionFilePath: vscode.Uri,
-        private sessionSettings: Settings,
         private devMode = false,
     ) {
         this.onExitedEmitter = new vscode.EventEmitter<void>();
@@ -48,27 +51,35 @@ export class PowerShellProcess {
             "PowerShellEditorServices/PowerShellEditorServices.psd1",
         );
 
-        const featureFlags =
-            this.sessionSettings.developer.featureFlags.length > 0
-                ? this.sessionSettings.developer.featureFlags
-                      .map((f) => `'${f}'`)
-                      .join(", ")
-                : "";
+        const featureFlags = vscode.workspace
+            .getConfiguration("powershell.developer")
+            .get<string[]>("featureFlags", [])
+            .map((f) => `'${f}'`)
+            .join(", ");
 
         this.startPsesArgs +=
             `-LogPath '${utils.escapeSingleQuotes(this.logDirectoryPath.fsPath)}' ` +
             `-SessionDetailsPath '${utils.escapeSingleQuotes(this.sessionFilePath.fsPath)}' ` +
             `-FeatureFlags @(${featureFlags}) `;
 
-        if (this.sessionSettings.integratedConsole.useLegacyReadLine) {
+        const useLegacyReadLine = vscode.workspace
+            .getConfiguration("powershell.integratedConsole")
+            .get<boolean>("useLegacyReadLine");
+        if (useLegacyReadLine) {
             this.startPsesArgs += "-UseLegacyReadLine";
         }
 
         const powerShellArgs: string[] = [];
 
-        const useLoginShell: boolean =
-            (utils.isMacOS && this.sessionSettings.startAsLoginShell.osx) ||
-            (utils.isLinux && this.sessionSettings.startAsLoginShell.linux);
+        const useLoginShell =
+            (utils.isMacOS &&
+                vscode.workspace
+                    .getConfiguration("powershell.startAsLoginShell")
+                    .get<boolean>("osx", true)) ||
+            (utils.isLinux &&
+                vscode.workspace
+                    .getConfiguration("powershell.startAsLoginShell")
+                    .get<boolean>("linux"));
 
         if (useLoginShell && this.isLoginShell(this.exePath)) {
             // This MUST be the first argument.
@@ -78,10 +89,12 @@ export class PowerShellProcess {
         powerShellArgs.push("-NoProfile");
 
         // Only add ExecutionPolicy param on Windows
-        if (
+        const setExecutionPolicy =
             utils.isWindows &&
-            this.sessionSettings.developer.setExecutionPolicy
-        ) {
+            vscode.workspace
+                .getConfiguration("powershell.developer")
+                .get<boolean>("setExecutionPolicy", true);
+        if (setExecutionPolicy) {
             powerShellArgs.push("-ExecutionPolicy", "Bypass");
         }
 
@@ -136,6 +149,9 @@ export class PowerShellProcess {
         }
 
         // Launch PowerShell in the integrated terminal
+        const startLocation = vscode.workspace
+            .getConfiguration("powershell.integratedConsole")
+            .get<string>("startLocation", "Panel");
         const terminalOptions: vscode.TerminalOptions = {
             name: this.isTemp
                 ? `${PowerShellProcess.title} (TEMP)`
@@ -146,12 +162,13 @@ export class PowerShellProcess {
             env: envMixin,
             iconPath: new vscode.ThemeIcon("terminal-powershell"),
             isTransient: true,
-            hideFromUser:
-                this.sessionSettings.integratedConsole.startInBackground,
+            hideFromUser: vscode.workspace
+                .getConfiguration("powershell.integratedConsole")
+                .get<boolean>("startInBackground"),
             location:
-                vscode.TerminalLocation[
-                    this.sessionSettings.integratedConsole.startLocation
-                ],
+                startLocation === "Editor"
+                    ? vscode.TerminalLocation.Editor
+                    : vscode.TerminalLocation.Panel,
         };
 
         // Subscribe a log event for when the terminal closes (this fires for
@@ -168,10 +185,13 @@ export class PowerShellProcess {
         this.logger.write(`PowerShell process started with PID: ${this.pid}`);
         this.pidUpdateEmitter?.fire(this.pid);
 
-        if (
-            this.sessionSettings.integratedConsole.showOnStartup &&
-            !this.sessionSettings.integratedConsole.startInBackground
-        ) {
+        const showOnStartup = vscode.workspace
+            .getConfiguration("powershell.integratedConsole")
+            .get<boolean>("showOnStartup", true);
+        const startInBackground = vscode.workspace
+            .getConfiguration("powershell.integratedConsole")
+            .get<boolean>("startInBackground");
+        if (showOnStartup && !startInBackground) {
             // We still need to run this to set the active terminal to the extension terminal.
             this.consoleTerminal.show(true);
         }
@@ -205,6 +225,13 @@ export class PowerShellProcess {
     // Returns the process Id of the consoleTerminal
     public async getPid(): Promise<number | undefined> {
         return await this.consoleTerminal?.processId;
+    }
+
+    // Returns the exit status of the terminal, if it has closed. This is
+    // captured before the terminal is disposed so callers can report a non-zero
+    // exit code when the process terminates before connecting.
+    public getExitStatus(): vscode.TerminalExitStatus | undefined {
+        return this.exitStatus;
     }
 
     public showTerminal(preserveFocus?: boolean): void {
@@ -280,7 +307,10 @@ export class PowerShellProcess {
         cancellationToken: vscode.CancellationToken,
     ): Promise<IEditorServicesSessionDetails | undefined> {
         const numOfTries = // We sleep for 1/5 of a second each try
-            5 * this.sessionSettings.developer.waitForSessionFileTimeoutSeconds;
+            5 *
+            vscode.workspace
+                .getConfiguration("powershell.developer")
+                .get("waitForSessionFileTimeoutSeconds", 240);
         const warnAt = numOfTries - 5 * 30; // Warn at 30 seconds
 
         // Check every second.
@@ -324,8 +354,16 @@ export class PowerShellProcess {
             return;
         }
 
+        // Capture the exit status before disposing so it can be reported. A
+        // non-zero code means the process failed to start; `undefined` means
+        // the user (or VS Code) closed the terminal.
+        this.exitStatus = terminal.exitStatus;
+        const code = this.exitStatus?.code;
+
         this.logger.writeWarning(
-            `PowerShell process terminated or Extension Terminal was closed, PID: ${this.pid}`,
+            `PowerShell process terminated or Extension Terminal was closed${
+                code !== undefined ? ` with exit code: ${code}` : ""
+            }, PID: ${this.pid}`,
         );
         this.dispose();
     }

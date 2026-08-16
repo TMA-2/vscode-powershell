@@ -1,8 +1,9 @@
 import eslint from "@eslint/js";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
+import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 
-export default tseslint.config(
+export default defineConfig(
     eslint.configs.recommended,
     tseslint.configs.strictTypeChecked,
     tseslint.configs.stylisticTypeChecked,
@@ -17,6 +18,10 @@ export default tseslint.config(
         rules: {
             "@typescript-eslint/explicit-function-return-type": "error",
             "@typescript-eslint/no-empty-object-type": "off",
+            // VS Code's .get<T>(key, default) needs explicit type params to
+            // widen literal defaults (e.g. true -> boolean), otherwise
+            // no-unnecessary-condition fires on the result.
+            "@typescript-eslint/no-unnecessary-type-arguments": "off",
             "@typescript-eslint/no-floating-promises": [
                 "error",
                 {

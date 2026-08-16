@@ -7,11 +7,7 @@ import * as process from "process";
 import untildify from "untildify";
 import { integer } from "vscode-languageserver-protocol";
 import type { ILogger } from "./logging";
-import {
-    changeSetting,
-    getSettings,
-    type PowerShellAdditionalExePathSettings,
-} from "./settings";
+import { changeSetting } from "./settings";
 import * as utils from "./utils";
 import vscode = require("vscode");
 
@@ -93,7 +89,7 @@ export class PowerShellExeFinder {
         // The platform details descriptor for the platform we're on
         private platformDetails: IPlatformDetails,
         // Additional configured PowerShells
-        private additionalPowerShellExes: PowerShellAdditionalExePathSettings,
+        private additionalPowerShellExes: Record<string, string>,
         private logger?: ILogger,
     ) {}
 
@@ -169,7 +165,10 @@ export class PowerShellExeFinder {
                 const message = `Additional PowerShell '${additionalPwsh.displayName}' not found at '${additionalPwsh.exePath}'!`;
                 this.logger?.writeWarning(message);
 
-                if (!getSettings().suppressAdditionalExeNotFoundWarning) {
+                const suppressAdditionalExeNotFoundWarning = vscode.workspace
+                    .getConfiguration("powershell")
+                    .get<boolean>("suppressAdditionalExeNotFoundWarning");
+                if (!suppressAdditionalExeNotFoundWarning) {
                     const selection = await vscode.window.showWarningMessage(
                         message,
                         "Don't Show Again",
@@ -585,7 +584,7 @@ export class PowerShellExeFinder {
         for (const item of await utils.readDirectory(
             powerShellInstallBaseDir,
         )) {
-            let currentVersion = -1;
+            let currentVersion: number;
             if (findPreview) {
                 // We are looking for something like "7-preview"
 
@@ -754,21 +753,6 @@ export class PowerShellExeFinder {
         // We're on a 32-bit Windows, so no alternate bitness
         return undefined;
     }
-}
-
-export function getWindowsSystemPowerShellPath(
-    systemFolderName: string,
-): string | undefined {
-    if (process.env.windir === undefined) {
-        return undefined;
-    } else
-        return path.join(
-            process.env.windir,
-            systemFolderName,
-            "WindowsPowerShell",
-            "v1.0",
-            "powershell.exe",
-        );
 }
 
 interface IPossiblePowerShellExe extends IPowerShellExeDetails {

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import vscode = require("vscode");
-import TelemetryReporter from "@vscode/extension-telemetry";
+import { TelemetryReporter } from "@vscode/extension-telemetry";
 import { DocumentSelector } from "vscode-languageclient";
 import { CodeActionsFeature } from "./features/CodeActions";
 import { ConsoleFeature } from "./features/Console";
@@ -17,10 +17,10 @@ import {
     ExternalApiFeature,
     type IPowerShellExtensionClient,
 } from "./features/ExternalApi";
-import { GenerateBugReportFeature } from "./features/GenerateBugReport";
 import { GetCommandsFeature } from "./features/GetCommands";
 import { HelpCompletionFeature } from "./features/HelpCompletion";
 import { ISECompatibilityFeature } from "./features/ISECompatibility";
+import { LanguageModelToolsFeature } from "./features/LanguageModelTools";
 import { OpenInISEFeature } from "./features/OpenInISE";
 import { PesterTestsFeature } from "./features/PesterTests";
 import { RemoteFilesFeature } from "./features/RemoteFiles";
@@ -28,8 +28,7 @@ import { ShowHelpFeature } from "./features/ShowHelp";
 import { LanguageClientConsumer } from "./languageClientConsumer";
 import { Logger } from "./logging";
 import { SessionManager } from "./session";
-import { getSettings } from "./settings";
-import { PowerShellLanguageId, sleep } from "./utils";
+import { sleep } from "./utils";
 // The 1DS telemetry key, which is just shared among all Microsoft extensions
 // (and isn't sensitive).
 const TELEMETRY_KEY =
@@ -57,13 +56,8 @@ export async function activate(
 
     telemetryReporter = new TelemetryReporter(TELEMETRY_KEY);
 
-    const settings = getSettings();
-    logger.writeDebug(
-        `Loaded settings:\n${JSON.stringify(settings, undefined, 2)}`,
-    );
-
     languageConfigurationDisposable = vscode.languages.setLanguageConfiguration(
-        PowerShellLanguageId,
+        "powershell",
         {
             // TODO: Remove the useless escapes
             wordPattern:
@@ -149,7 +143,6 @@ export async function activate(
 
     sessionManager = new SessionManager(
         context,
-        settings,
         logger,
         documentSelector,
         packageInfo.name,
@@ -162,7 +155,6 @@ export async function activate(
     // Register commands that do not require Language client
     commandRegistrations = [
         new ExamplesFeature(),
-        new GenerateBugReportFeature(sessionManager),
         new ISECompatibilityFeature(),
         new OpenInISEFeature(),
         new PesterTestsFeature(sessionManager, logger),
@@ -202,11 +194,15 @@ export async function activate(
         new RemoteFilesFeature(),
         new DebugSessionFeature(context, sessionManager, logger),
         new HelpCompletionFeature(),
+        new LanguageModelToolsFeature(),
     ];
 
     sessionManager.setLanguageClientConsumers(languageClientConsumers);
 
-    if (settings.startAutomatically) {
+    const startAutomatically = vscode.workspace
+        .getConfiguration("powershell")
+        .get<boolean>("startAutomatically", true);
+    if (startAutomatically) {
         await sessionManager.start();
     }
 

@@ -1,12 +1,12 @@
 {
   "name": "powershell",
   "displayName": "PowerShell",
-  "version": "2025.4.0",
+  "version": "2026.1.2",
   "preview": false,
   "publisher": "ms-vscode",
   "description": "Develop PowerShell modules, commands and scripts in Visual Studio Code!",
   "engines": {
-    "vscode": "^1.101.0"
+    "vscode": "^1.114.0"
   },
   "author": "Microsoft Corporation",
   "license": "SEE LICENSE IN LICENSE.txt",
@@ -60,39 +60,51 @@
     "onCommand:PowerShell.SpecifyScriptArgs"
   ],
   "dependencies": {
-    "@vscode/extension-telemetry": "^0.9.9",
-    "semver": "^7.7.2",
+    "@microsoft/applicationinsights-common": "^3.4.1",
+    "@vscode/extension-telemetry": "^1.5.2",
+    "semver": "^7.8.4",
     "untildify": "^4.0.0",
-    "uuid": "^9.0.1",
+    "uuid": "^14.0.0",
     "vscode-languageclient": "^9.0.1",
-    "vscode-languageserver-protocol": "^3.17.5"
+    "vscode-languageserver-protocol": "^3.18.0"
   },
   "devDependencies": {
-    "@vscode/vsce": "^3.6.2",
-    "esbuild": "^0.25.10"
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.1"
   },
   "optionalDependencies": {
-    "@eslint/js": "^9.26.0",
+    "@eslint/js": "^10.0.1",
+    "@types/mocha": "^10.0.10",
     "@types/mock-fs": "^4.13.4",
-    "@types/node": "^22.18.8",
+    "@types/node": "^22.19.21",
     "@types/semver": "^7.7.1",
-    "@types/sinon": "^17.0.4",
+    "@types/sinon": "^21.0.1",
     "@types/ungap__structured-clone": "^1.2.0",
-    "@types/uuid": "^9.0.8",
-    "@types/vscode": "~1.101.0",
-    "@ungap/structured-clone": "^1.3.0",
+    "@types/vscode": "~1.115.0",
+    "@ungap/structured-clone": "^1.3.1",
     "@vscode/debugprotocol": "^1.68.0",
-    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
     "esbuild-register": "^3.6.0",
-    "eslint": "^9.37.0",
+    "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.8",
     "mock-fs": "^5.5.0",
-    "prettier": "^3.6.2",
+    "prettier": "^3.8.4",
     "prettier-plugin-organize-imports": "^4.3.0",
-    "sinon": "^19.0.5",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.0"
+    "sinon": "^22.0.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1"
+  },
+  "overrides": {
+    "@nevware21/ts-utils": "^0.15.0",
+    "diff": "^8.0.3",
+    "form-data": "^4.0.6",
+    "js-yaml": "^4.2.0",
+    "markdown-it": "^14.2.0",
+    "qs": "^6.15.2",
+    "serialize-javascript": "^7.0.6",
+    "tmp": "^0.2.7",
+    "undici": "^7.28.0"
   },
   "extensionDependencies": [
     "vscode.powershell"
@@ -118,6 +130,97 @@
     "breakpoints": [
       {
         "language": "powershell"
+      }
+    ],
+    "languageModelTools": [
+      {
+        "name": "powershell_get_command",
+        "toolReferenceName": "getPowerShellCommand",
+        "displayName": "Get PowerShell Command",
+        "modelDescription": "Get the commands (cmdlets, functions, and scripts) available in the user's active PowerShell session, scoped by name and/or module. You must provide a 'name' and/or 'module' filter (at least one is required). Returns each matching command's name, module, default parameter set, and parameter names. Use this to discover the exact name, module, and parameters of a PowerShell command instead of guessing.",
+        "userDescription": "Lists commands available in the active PowerShell session.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(symbol-method)",
+        "tags": [
+          "powershell"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Only return commands whose name matches this value (supports wildcards; bare text is matched as a substring), e.g. 'Get-ChildItem', 'ChildItem', or 'Get-*'. Provide this and/or 'module'."
+            },
+            "module": {
+              "type": "string",
+              "description": "Only return commands from this module (supports wildcards), e.g. 'Microsoft.PowerShell.Management'. Provide this and/or 'name'."
+            }
+          }
+        }
+      },
+      {
+        "name": "powershell_get_help",
+        "toolReferenceName": "getPowerShellHelp",
+        "displayName": "Get PowerShell Help",
+        "modelDescription": "Get the full help (Get-Help -Full) for a specific PowerShell command from the user's active session, including synopsis, syntax, parameter descriptions, and examples. Use this to ground answers about how a PowerShell command works and what parameters it accepts, instead of guessing.",
+        "userDescription": "Retrieves the full help for a PowerShell command.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(question)",
+        "tags": [
+          "powershell"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The name of the PowerShell command to get help for, e.g. 'Get-ChildItem'."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      },
+      {
+        "name": "powershell_get_environment",
+        "toolReferenceName": "getPowerShellEnvironment",
+        "displayName": "Get PowerShell Environment",
+        "modelDescription": "Get details about the user's active PowerShell session, including the PowerShell version, edition (Core or Desktop), and process architecture. Use this before constructing version- or edition-specific PowerShell so that suggestions match the user's actual environment.",
+        "userDescription": "Reports the active PowerShell version, edition, and architecture.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(terminal-powershell)",
+        "tags": [
+          "powershell"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "powershell_expand_alias",
+        "toolReferenceName": "expandPowerShellAlias",
+        "displayName": "Expand PowerShell Aliases",
+        "modelDescription": "Expand the aliases in a PowerShell script to their full command names (for example 'gci' becomes 'Get-ChildItem' and '?' becomes 'Where-Object') using the user's active PowerShell session. Use this to normalize or clarify aliased PowerShell before explaining or editing it.",
+        "userDescription": "Expands aliases in a PowerShell script to full command names.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(symbol-string)",
+        "tags": [
+          "powershell"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The PowerShell script text whose aliases should be expanded."
+            }
+          },
+          "required": [
+            "text"
+          ]
+        }
       }
     ],
     "viewsContainers": {
@@ -198,7 +301,7 @@
         "command": "PowerShell.InsertCommand",
         "title": "Insert Command",
         "category": "PowerShell",
-        "icon": "$(pencil)"
+        "icon": "$(arrow-right)"
       },
       {
         "command": "PowerShell.ShowHelp",
@@ -231,11 +334,6 @@
       {
         "command": "PowerShell.OpenLogFolder",
         "title": "Open PowerShell Extension Logs Folder",
-        "category": "PowerShell"
-      },
-      {
-        "command": "PowerShell.GenerateBugReport",
-        "title": "Upload Bug Report to GitHub",
         "category": "PowerShell"
       },
       {
@@ -391,12 +489,12 @@
       "view/item/context": [
         {
           "command": "PowerShell.ShowHelp",
-          "when": "view == PowerShellCommands",
+          "when": "view == PowerShellCommands && viewItem == command",
           "group": "inline@1"
         },
         {
           "command": "PowerShell.InsertCommand",
-          "when": "view == PowerShellCommands",
+          "when": "view == PowerShellCommands && viewItem == command",
           "group": "inline@2"
         }
       ]
@@ -698,6 +796,7 @@
     ],
     "configuration": [
       {
+        "id": "powershell.interface",
         "title": "Interface",
         "properties": {
           "powershell.buttons.showRunButtons": {
@@ -725,6 +824,11 @@
             "default": true,
             "markdownDescription": "Shows the last line of a folded section similar to the default VS Code folding style. When disabled, the entire folded region is hidden."
           },
+          "powershell.rename.createParameterAlias": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Creates an alias attribute for a parameter when renaming a parameter definition."
+          },
           "powershell.helpCompletion": {
             "type": "string",
             "default": "BlockComment",
@@ -742,7 +846,7 @@
           },
           "powershell.sideBar.CommandExplorerVisibility": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "markdownDescription": "Specifies the visibility of the Command Explorer in the side bar."
           },
           "powershell.sideBar.CommandExplorerExcludeFilter": {
@@ -768,10 +872,16 @@
             "type": "boolean",
             "default": false,
             "markdownDescription": "Suppresses the warning message when any of `#powershell.powerShellAdditionalExePaths#` is not found."
+          },
+          "powershell.rename.acceptDisclaimer": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "Auto-accepts the [disclaimer for the PowerShell Rename Symbol feature](https://aka.ms/powershell-rename-disclaimer) which has support limitations and risks."
           }
         }
       },
       {
+        "id": "powershell.formatting",
         "title": "Formatting",
         "properties": {
           "powershell.codeFormatting.preset": {
@@ -863,12 +973,6 @@
             "default": false,
             "markdownDescription": "Removes redundant whitespace between parameters."
           },
-          "powershell.codeFormatting.whitespaceAroundPipe": {
-            "type": "boolean",
-            "default": true,
-            "markdownDescription": "**Deprecated:** Please use the `#powershell.codeFormatting.addWhitespaceAroundPipe#` setting instead. If you've used this setting before, we have moved it for you automatically.",
-            "markdownDeprecationMessage": "**Deprecated:** Please use the `#powershell.codeFormatting.addWhitespaceAroundPipe#` setting instead. If you've used this setting before, we have moved it for you automatically."
-          },
           "powershell.codeFormatting.addWhitespaceAroundPipe": {
             "type": "boolean",
             "default": true,
@@ -889,6 +993,11 @@
             "default": true,
             "markdownDescription": "Align assignment statements in a hashtable or a DSC Configuration."
           },
+          "powershell.codeFormatting.alignEnumMemberValues": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Align member value assignments in an Enum Type Definition."
+          },
           "powershell.codeFormatting.useConstantStrings": {
             "type": "boolean",
             "default": false,
@@ -902,6 +1011,7 @@
         }
       },
       {
+        "id": "powershell.editorServices",
         "title": "Editor Services",
         "properties": {
           "powershell.powerShellDefaultVersion": {
@@ -991,12 +1101,13 @@
         }
       },
       {
+        "id": "powershell.pester",
         "title": "Pester",
         "properties": {
           "powershell.pester.useLegacyCodeLens": {
             "type": "boolean",
-            "default": true,
-            "markdownDescription": "Use a CodeLens that is compatible with Pester 4. Disabling this will show `Run Tests` on all `It`, `Describe` and `Context` blocks, and will correctly work only with Pester 5 and newer."
+            "default": false,
+            "markdownDescription": "Use the legacy CodeLens compatible with Pester 4 (only shows `Run Tests` on `Describe` blocks). When disabled (the default), `Run Tests` is shown on all `It`, `Describe` and `Context` blocks for Pester 5 and newer."
           },
           "powershell.pester.codeLens": {
             "type": "boolean",
@@ -1031,12 +1142,18 @@
         }
       },
       {
+        "id": "powershell.terminal",
         "title": "Terminal",
         "properties": {
           "powershell.integratedConsole.suppressStartupBanner": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Do not show the startup banner in the PowerShell Extension Terminal."
+          },
+          "powershell.integratedConsole.suppressTerminalStoppedNotification": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "Do not show a notification when the PowerShell Extension Terminal has stopped."
           },
           "powershell.integratedConsole.showOnStartup": {
             "type": "boolean",
@@ -1079,6 +1196,7 @@
         }
       },
       {
+        "id": "powershell.developer",
         "title": "Developer",
         "properties": {
           "powershell.developer.editorServicesLogLevel": {
@@ -1144,12 +1262,6 @@
             "type": "number",
             "default": 240,
             "markdownDescription": "Specifies how many seconds the extension will wait for the LSP server, PowerShell Editor Services, to connect. The default is four minutes; try increasing this value if your computer is particularly slow (often caused by overactive anti-malware programs)."
-          },
-          "powershell.bugReporting.project": {
-            "type": "string",
-            "default": "https://github.com/PowerShell/vscode-powershell",
-            "markdownDescription": "**Deprecated:** Specifies the URL of the GitHub project in which to generate bug reports.",
-            "markdownDeprecationMessage": "**Deprecated:** This setting was never meant to be changed!"
           }
         }
       }

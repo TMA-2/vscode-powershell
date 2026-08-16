@@ -1,8 +1,8 @@
 # PowerShell for Visual Studio Code
 
 [![CI Tests](https://github.com/PowerShell/vscode-powershell/actions/workflows/ci-test.yml/badge.svg)](https://github.com/PowerShell/vscode-powershell/actions/workflows/ci-test.yml)
-[![Version](https://img.shields.io/visual-studio-marketplace/v/ms-vscode.PowerShell)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.PowerShell)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/ms-vscode.PowerShell)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.PowerShell)
+[![Version](https://vsmarketplacebadges.dev/version/ms-vscode.PowerShell.svg)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.PowerShell)
+[![Installs](https://vsmarketplacebadges.dev/downloads-short/ms-vscode.PowerShell.svg)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.PowerShell)
 [![Join the chat on Discord](https://img.shields.io/discord/180528040881815552.svg?label=%23vscode&logo=discord&logoColor=white)](https://aka.ms/powershell-vscode-discord)
 
 This extension provides rich [PowerShell][] language support for [Visual Studio Code][] (VS Code).
@@ -64,8 +64,9 @@ The extension should work everywhere [Visual Studio Code](https://code.visualstu
 [VS Code Remote Development](https://code.visualstudio.com/docs/remote/remote-overview) Environments, including [Github Codespaces](https://github.com/features/codespaces) and [VS Code Server](https://code.visualstudio.com/docs/remote/vscode-server) are supported.
 
 We actively test the following configurations [in Github Actions on every commit](https://github.com/PowerShell/vscode-powershell/actions/workflows/ci-test.yml):
-- **Windows Server 2022** with Windows PowerShell 5.1 and PowerShell 7+
-- **macOS 14.7** with PowerShell 7+
+
+- **Windows Server 2025** with Windows PowerShell 5.1 and PowerShell 7+
+- **macOS 15.7.1** with PowerShell 7+
 - **Ubuntu 24.04** with PowerShell 7+
 
 On Windows, we also test with and without Constrained Language Mode enabled.
